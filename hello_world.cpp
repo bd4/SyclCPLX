@@ -3,10 +3,31 @@
 #include <complex>
 #include <sycl/sycl.hpp>
 
+// simplest version, pass by value. Implicit conversion works
 bool almost_equal(std::complex<double> x, std::complex<double> y, int ulp) {
   return std::abs(x - y) <=
              std::numeric_limits<double>::epsilon() * std::abs(x + y) * ulp ||
          std::abs(x - y) < std::numeric_limits<double>::min();
+}
+
+// implicit conversion fails for all these version below
+template <typename T>
+bool almost_equal_tmpl(std::complex<T> x, std::complex<T> y, int ulp) {
+  return std::abs(x - y) <=
+             std::numeric_limits<T>::epsilon() * std::abs(x + y) * ulp ||
+         std::abs(x - y) < std::numeric_limits<T>::min();
+}
+
+bool almost_equal_ref(std::complex<double>& x, std::complex<double>& y, int ulp) {
+  return std::abs(x - y) <=
+             std::numeric_limits<double>::epsilon() * std::abs(x + y) * ulp ||
+         std::abs(x - y) < std::numeric_limits<double>::min();
+}
+
+bool almost_equal_ptr(std::complex<double>* x, std::complex<double>* y, int ulp) {
+  return std::abs(*x - *y) <=
+             std::numeric_limits<double>::epsilon() * std::abs(*x + *y) * ulp ||
+         std::abs(*x - *y) < std::numeric_limits<double>::min();
 }
 
 int main() {
@@ -36,5 +57,8 @@ int main() {
   std::cout << "gpu_result " << gpu_result[0] << std::endl;
   // Using implicit cast from sycl::ext::cplx::complex -> std::complex
   assert(almost_equal(cpu_result, gpu_result[0], 1));
+  // assert(almost_equal_tmpl(cpu_result, gpu_result[0], 1));
+  // assert(almost_equal_ref(cpu_result, gpu_result[0], 1));
+  // assert(almost_equal_ptr(&cpu_result, gpu_result, 1));
   return 0;
 }
